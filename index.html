@@ -78,7 +78,6 @@
       border-radius: 12px;
       background: transparent;
       z-index: 9999;
-      /* Initial center off screen, will be positioned dynamically */
       top: 0;
       left: 0;
       transform: translate(-50%, -50%);
@@ -121,11 +120,27 @@
       cursor: pointer;
       user-select: none;
       transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
+    .front-content {
+      transform-origin: center;
+      transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* Flip front sheet open */
     #popup.open .front-sheet {
       transform: rotateY(-160deg);
       box-shadow: none;
+    }
+
+    /* Fix mirrored text by flipping content horizontally */
+    #popup.open .front-content {
+      transform: scaleX(-1);
     }
   </style>
 </head>
@@ -177,7 +192,9 @@
   <div id="popup" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
     <div class="book">
       <div class="back-sheet" id="backSheet"></div>
-      <div class="front-sheet" id="frontSheet" role="button" tabindex="0" aria-label="Close book popup">Cover</div>
+      <div class="front-sheet" id="frontSheet" role="button" tabindex="0" aria-label="Close book popup">
+        <div class="front-content">Cover</div>
+      </div>
     </div>
   </div>
 
@@ -185,9 +202,10 @@
     const popup = document.getElementById('popup');
     const backSheet = document.getElementById('backSheet');
     const frontSheet = document.getElementById('frontSheet');
+    const frontContent = frontSheet.querySelector('.front-content');
 
     function showPopup(pageX, pageY, frontText, backText) {
-      frontSheet.textContent = frontText || "Cover";
+      frontContent.textContent = frontText || "Cover";
       backSheet.innerHTML = backText || "<p>This is the back page content.</p>";
 
       popup.style.left = pageX + 'px';
