@@ -161,13 +161,12 @@
     .front-sheet {
       position: absolute;
       top: 0;
-      left: 0; /* Positioned over left page */
+      left: 0;
       width: 50%;
       height: 100%;
       background: url('cover.png') no-repeat center center;
       background-size: cover;
       border-radius: 12px 0 0 12px;
-      /* Pivot on left edge */
       transform-origin: left center;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
       cursor: pointer;
@@ -178,14 +177,14 @@
       color: transparent;
       z-index: 20;
       backface-visibility: hidden;
-      transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
       transform: rotateY(0deg);
     }
 
     /* Front content fix */
     .front-content {
       transform-origin: center;
-      transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
       user-select: none;
       pointer-events: none;
       color: transparent;
@@ -258,12 +257,10 @@
 
     let lastFocusedHotspot = null;
 
-    // Utility to clamp a number between min and max
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
     }
 
-    // Position popup so it doesn't go off screen
     function positionPopup(pageX, pageY) {
       const popupWidth = popup.offsetWidth;
       const popupHeight = popup.offsetHeight;
@@ -277,7 +274,6 @@
       popup.style.transform = 'translate(-50%, -50%)';
     }
 
-    // Get hotspot info & content
     function getHotspotContent(hotspot) {
       const rect = hotspot.getBoundingClientRect();
       const pageX = rect.left + rect.width / 2 + window.scrollX;
@@ -297,7 +293,7 @@
 
       positionPopup(pageX, pageY);
 
-      // Show popup and reset states
+      // Reset states
       popup.style.display = 'block';
       popup.setAttribute('aria-hidden', 'false');
       popup.focus();
@@ -314,22 +310,22 @@
       popup.classList.remove('open');
 
       requestAnimationFrame(() => {
-        // Animate cover flip left edge pivot, from 0 to -180deg (open from right to left)
-        frontSheet.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
+        // Animate cover flip - duration now 2s
+        frontSheet.style.transition = 'transform 2s cubic-bezier(0.4, 0, 0.2, 1)';
         frontSheet.style.transform = 'rotateY(-180deg)';
         popup.classList.add('open');
 
-        // Show right page after cover flip
+        // Show right page after 2s (match cover animation)
         setTimeout(() => {
           backSheet.style.visibility = 'visible';
           backSheet.style.opacity = 1;
 
-          // Show left page after right page
+          // Show left page 0.5s after right page
           setTimeout(() => {
             leftPage.style.visibility = 'visible';
             leftPage.style.opacity = 1;
           }, 500);
-        }, 1000);
+        }, 2000); // <-- adjusted from 1000 to 2000
       });
     }
 
@@ -339,19 +335,19 @@
       backSheet.style.opacity = 0;
       backSheet.style.visibility = 'hidden';
 
-      frontSheet.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
+      frontSheet.style.transition = 'transform 2s cubic-bezier(0.4, 0, 0.2, 1)';
       frontSheet.style.transform = 'rotateY(0deg)';
 
       popup.classList.remove('open');
       popup.setAttribute('aria-hidden', 'true');
 
+      // Hide popup after close animation (2s)
       setTimeout(() => {
         popup.style.display = 'none';
         if (lastFocusedHotspot) lastFocusedHotspot.focus();
-      }, 1000);
+      }, 2000); // <-- adjusted from 1000 to 2000
     }
 
-    // Handle clicks on hotspots
     document.addEventListener('click', e => {
       const hotspot = e.target.closest('.hotspot');
       if (hotspot) {
@@ -363,7 +359,6 @@
       }
     });
 
-    // Keyboard support for hotspots and popup
     document.addEventListener('keydown', e => {
       const activeEl = document.activeElement;
       if (activeEl && activeEl.classList.contains('hotspot')) {
@@ -380,7 +375,6 @@
       }
     });
 
-    // Close popup by clicking the front cover
     frontSheet.addEventListener('click', closePopup);
     frontSheet.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') {
