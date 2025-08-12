@@ -26,7 +26,62 @@
       object-fit: cover;
     }
 
-    /* Hotspot styles omitted for brevity - keep your original here */
+    .hotspot {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: transparent;
+      border: 2px solid white;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .hotspot:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 2px;
+    }
+
+    /* Hotspot positions */
+    .jungle-stage     { left: 64.4%;  top: 62.72%; }
+    .bar-1            { left: 57.3%;  top: 65.54%; }
+    .snack-bar        { left: 59.2%;  top: 61.34%; }
+    .chill-garden     { left: 40.5%;  top: 50.38%; }
+    .therapies        { left: 42.0%;  top: 44.29%; }
+    .art-space        { left: 39.2%;  top: 41.72%; }
+    .utopia-stage     { left: 34.3%;  top: 36.16%; }
+    .bar-2            { left: 25.4%;  top: 37.91%; }
+    .market           { left: 22.6%;  top: 35.89%; }
+    .psycare          { left: 19.3%;  top: 32.91%; }
+    .bar-3            { left: 22.6%;  top: 31.29%; }
+    .food-area        { left: 26.8%;  top: 32.37%; }
+    .workshops        { left: 80.5%;  top: 60.27%; }
+
+    .hotspot:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .tooltip {
+      display: none;
+    }
+
+    /* Show tooltip on hover/focus */
+    .hotspot:hover .tooltip,
+    .hotspot:focus .tooltip {
+      display: block;
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: black;
+      color: white;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 20;
+    }
 
     /* Popup styles */
 
@@ -153,7 +208,45 @@
 <body>
   <div id="map-container" class="map-container">
     <img id="map" src="ArcadiaMap.png" alt="ArcadiaMap" />
-    <!-- Your hotspots here -->
+    <div class="hotspot jungle-stage" role="button" tabindex="0" aria-label="Jungle Stage">
+      <div class="tooltip">Jungle Stage</div>
+    </div>
+    <div class="hotspot bar-1" role="button" tabindex="0" aria-label="Bar">
+      <div class="tooltip">Bar</div>
+    </div>
+    <div class="hotspot snack-bar" role="button" tabindex="0" aria-label="Snack Bar">
+      <div class="tooltip">Snack Bar</div>
+    </div>
+    <div class="hotspot chill-garden" role="button" tabindex="0" aria-label="Chill Garden">
+      <div class="tooltip">Chill Garden</div>
+    </div>
+    <div class="hotspot therapies" role="button" tabindex="0" aria-label="Therapies">
+      <div class="tooltip">Therapies</div>
+    </div>
+    <div class="hotspot art-space" role="button" tabindex="0" aria-label="Art Space">
+      <div class="tooltip">Art Space</div>
+    </div>
+    <div class="hotspot utopia-stage" role="button" tabindex="0" aria-label="Utopia Stage">
+      <div class="tooltip">Utopia Stage</div>
+    </div>
+    <div class="hotspot bar-2" role="button" tabindex="0" aria-label="Bar">
+      <div class="tooltip">Bar</div>
+    </div>
+    <div class="hotspot market" role="button" tabindex="0" aria-label="Market">
+      <div class="tooltip">Market</div>
+    </div>
+    <div class="hotspot psycare" role="button" tabindex="0" aria-label="Psycare">
+      <div class="tooltip">Psycare</div>
+    </div>
+    <div class="hotspot bar-3" role="button" tabindex="0" aria-label="Bar">
+      <div class="tooltip">Bar</div>
+    </div>
+    <div class="hotspot food-area" role="button" tabindex="0" aria-label="Food Area">
+      <div class="tooltip">Food Area</div>
+    </div>
+    <div class="hotspot workshops" role="button" tabindex="0" aria-label="Workshops">
+      <div class="tooltip">Workshops</div>
+    </div>
   </div>
 
   <div id="popup" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
