@@ -111,29 +111,6 @@
       transform-style: preserve-3d;
     }
 
-    /* Right page (back-sheet) */
-    .back-sheet {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      width: 50%;
-      height: 100%;
-      background: url('page.png') no-repeat center center;
-      background-size: cover;
-      border-radius: 0 12px 12px 0;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-      padding: 20px;
-      box-sizing: border-box;
-      font-size: 16px;
-      color: #333;
-      overflow-y: auto;
-      user-select: text;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.5s ease;
-      z-index: 5;
-    }
-
     /* Left page */
     .left-page {
       position: absolute;
@@ -154,6 +131,29 @@
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.5s ease;
+      z-index: 5;
+    }
+
+    /* Right page (back-sheet) */
+    .back-sheet {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 50%;
+      height: 100%;
+      background: url('page.png') no-repeat center center;
+      background-size: cover;
+      border-radius: 0 12px 12px 0;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+      padding: 20px;
+      box-sizing: border-box;
+      font-size: 16px;
+      color: #333;
+      overflow-y: auto;
+      user-select: text;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease;
       z-index: 10;
     }
 
@@ -161,7 +161,7 @@
     .front-sheet {
       position: absolute;
       top: 0;
-      left: 50%; /* Position over right page */
+      left: 0; /* Positioned over left page */
       width: 50%;
       height: 100%;
       background: url('cover.png') no-repeat center center;
@@ -314,9 +314,9 @@
       popup.classList.remove('open');
 
       requestAnimationFrame(() => {
-        // Animate cover flip
+        // Animate cover flip left edge pivot, from 0 to -180deg (open from right to left)
         frontSheet.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
-        frontSheet.style.transform = 'rotateY(-160deg)';
+        frontSheet.style.transform = 'rotateY(-180deg)';
         popup.classList.add('open');
 
         // Show right page after cover flip
