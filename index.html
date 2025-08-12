@@ -42,7 +42,7 @@
       outline-offset: 2px;
     }
 
-    /* (Keep your existing hotspot positions here) */
+    /* Hotspot positions */
     .jungle-stage     { left: 64.4%;  top: 62.72%; }
     .bar-1            { left: 57.3%;  top: 65.54%; }
     .snack-bar        { left: 59.2%;  top: 61.34%; }
@@ -156,7 +156,7 @@
       height: 100%;
       top: 0;
       left: 0;
-      background: url('cover.png') no-repeat center center;
+      background: url('book-cover.png') no-repeat center center;
       background-size: cover;
       border-radius: 12px 0 0 12px;
       transform-origin: left center;
@@ -265,15 +265,27 @@
 
       popup.style.left = pageX + 'px';
       popup.style.top = pageY + 'px';
-      popup.style.display = 'block';
-      popup.setAttribute('aria-hidden', 'false');
-      popup.focus();
 
-      // Reset flip animation
-      popup.classList.remove('open');
-      requestAnimationFrame(() => {
-        popup.classList.add('open');
-      });
+      // If popup already visible and open, restart animation cleanly
+      if (popup.style.display === 'block' && popup.classList.contains('open')) {
+        popup.classList.remove('open');
+
+        // Force reflow to reset animation
+        // eslint-disable-next-line no-unused-expressions
+        popup.offsetWidth;
+
+        requestAnimationFrame(() => {
+          popup.classList.add('open');
+        });
+      } else {
+        popup.style.display = 'block';
+        popup.setAttribute('aria-hidden', 'false');
+        popup.focus();
+
+        requestAnimationFrame(() => {
+          popup.classList.add('open');
+        });
+      }
     }
 
     function closePopup() {
@@ -296,7 +308,7 @@
 
         const title = hotspot.querySelector('.tooltip')?.textContent || 'Info';
 
-        // Example content for left and right pages
+        // Example left and right page content
         const leftContent = `<h3>${title} Left Page</h3><p>Details about the left side.</p>`;
         const rightContent = `<h2>${title}</h2><p>Welcome to the ${title} area of the map!</p>`;
 
