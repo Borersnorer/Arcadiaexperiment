@@ -85,7 +85,7 @@
 let isAnimating = false;
 
 function openBook(pageNumber) {
-  if (isAnimating) return; // Prevent overlapping animations
+  if (isAnimating) return;
   isAnimating = true;
 
   const cover = document.getElementById('cover');
@@ -104,7 +104,7 @@ function openBook(pageNumber) {
   void cover.offsetWidth;
 
   const coverDuration = 2000; // 2 seconds
-  const overlapTime = 300; // start left page this much before cover ends
+  const overlapTime = 300; // left page starts 0.3s before cover finishes
 
   // Animate cover opening
   cover.style.transition = `transform ${coverDuration}ms ease-in-out`;
@@ -116,7 +116,7 @@ function openBook(pageNumber) {
     leftPage.style.transform = 'rotateY(0deg)';
   }, coverDuration - overlapTime);
 
-  // Allow next animation after cover finishes
+  // Allow next animation after complete
   setTimeout(() => {
     isAnimating = false;
   }, coverDuration + 100);
