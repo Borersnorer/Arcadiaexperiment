@@ -1,496 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Interactive Map with Two-Page Book Popup</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    /* ---------- Basic layout ---------- */
-    :root{
-      --popup-w: 400px;
-      --popup-h: 260px;
-      --cover-duration: 2000ms; /* keep in sync with JS */
-      --left-duration: 1000ms;  /* keep in sync with JS */
-    }
-
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      text-align: center;
-    }
-
-    .map-container {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      overflow: hidden;
-      background: #222;
-    }
-
-    #map {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .hotspot {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background-color: transparent;
-      border: 2px solid white;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 10;
-    }
-
-    .hotspot:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-
-    /* Hotspot positions (your original values) */
-    .jungle-stage     { left: 64.4%;  top: 62.72%; }
-    .bar-1            { left: 57.3%;  top: 65.54%; }
-    .snack-bar        { left: 59.2%;  top: 61.34%; }
-    .chill-garden     { left: 40.5%;  top: 50.38%; }
-    .therapies        { left: 42.0%;  top: 44.29%; }
-    .art-space        { left: 39.2%;  top: 41.72%; }
-    .utopia-stage     { left: 34.3%;  top: 36.16%; }
-    .bar-2            { left: 25.4%;  top: 37.91%; }
-    .market           { left: 22.6%;  top: 35.89%; }
-    .psycare          { left: 19.3%;  top: 32.91%; }
-    .bar-3            { left: 22.6%;  top: 31.29%; }
-    .food-area        { left: 26.8%;  top: 32.37%; }
-    .workshops        { left: 80.5%;  top: 60.27%; }
-
-    .hotspot:hover { background-color: rgba(255,255,255,0.2); }
-
-    .tooltip { display: none; }
-    .hotspot:hover .tooltip,
-    .hotspot:focus .tooltip {
-      display: block;
-      position: absolute;
-      top: -25px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: black;
-      color: white;
-      padding: 3px 6px;
-      border-radius: 4px;
-      font-size: 12px;
-      white-space: nowrap;
-      pointer-events: none;
-      z-index: 20;
-    }
-
-    /* ---------- Popup / book ---------- */
-    #popup {
-      position: absolute;
-      display: none;
-      width: var(--popup-w);
-      height: var(--popup-h);
-      perspective: 1200px;
-      transform-style: preserve-3d;
-      user-select: none;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
-      border-radius: 12px;
-      background: transparent;
-      z-index: 9999;
-      top: 0;
-      left: 0;
-      transform: translate(-50%, -50%);
-      outline: none;
-    }
-
-    .book {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      perspective: inherit;
-      transform-style: preserve-3d;
-    }
-
-    /* Right page (back-sheet) - visible immediately under the cover */
-    .back-sheet {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      width: 50%;
-      height: 100%;
-      background: url('page.png') no-repeat center center;
-      background-size: cover;
-      border-radius: 0 12px 12px 0;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-      padding: 20px;
-      box-sizing: border-box;
-      font-size: 16px;
-      color: #333;
-      overflow-y: auto;
-      user-select: text;
-      opacity: 1;
-      visibility: visible;
-      z-index: 10;
-      transition: opacity 0.3s ease;
-    }
-
-    /* Left page - will animate (swing) from vertical to horizontal */
-    .left-page {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 50%;
-      height: 100%;
-      background: url('page.png') no-repeat center center;
-      background-size: cover;
-      border-radius: 12px 0 0 12px;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-      padding: 20px;
-      box-sizing: border-box;
-      font-size: 16px;
-      color: #333;
-      overflow-y: auto;
-      user-select: text;
-
-      /* START HIDDEN and rotated (edge-on) */
-      opacity: 0;
-      visibility: hidden;
-      transform-origin: right center;
-      transform-style: preserve-3d;
-      transform: rotateY(90deg); /* edge-on */
-      transition: transform var(--left-duration) ease, opacity 0s ease;
-      z-index: 5;
-    }
-
-    /* Cover (front-sheet) - initially on top, positioned OVER the right page */
-    .front-sheet {
-      position: absolute;
-      top: 0;
-      left: 50%; /* cover overlaps right page */
-      width: 50%;
-      height: 100%;
-      background: url('cover.png') no-repeat center center;
-      background-size: cover;
-      border-radius: 12px 0 0 12px;
-      transform-origin: left center; /* pivot on left edge of cover */
-      box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: transparent;
-      z-index: 20;
-      backface-visibility: hidden;
-      transition: transform var(--cover-duration) cubic-bezier(0.4, 0, 0.2, 1);
-      transform: rotateY(0deg);
-      pointer-events: auto;
-    }
-
-    .front-content { transform-origin: center; transition: transform var(--cover-duration) cubic-bezier(0.4,0,0.2,1); user-select:none; pointer-events:none; color:transparent; }
-    #popup.open .front-content { transform: scaleX(-1); }
-  </style>
+<meta charset="UTF-8">
+<title>Interactive Book</title>
+<style>
+  body {
+    margin: 0;
+    background: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .book-container {
+    position: relative;
+    perspective: 2000px;
+    width: 800px;
+    height: 500px;
+  }
+  .page, .front-sheet, .back-sheet, .left-page {
+    position: absolute;
+    width: 400px;
+    height: 500px;
+    top: 0;
+    backface-visibility: hidden;
+  }
+  .front-sheet {
+    left: 400px;
+    transform-origin: left center;
+    transform: rotateY(0deg);
+    z-index: 20;
+  }
+  .back-sheet {
+    left: 400px;
+    background: white;
+    z-index: 10;
+  }
+  .left-page {
+    left: 0;
+    background: white;
+    transform-origin: right center;
+    transform: rotateY(90deg);
+    z-index: 5;
+  }
+  .hotspot {
+    position: absolute;
+    background: rgba(255, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 30;
+  }
+  .hotspot:hover {
+    background: rgba(255, 0, 0, 0.5);
+  }
+  .buttons {
+    position: absolute;
+    top: -60px;
+    left: 0;
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
-  <div id="map-container" class="map-container">
-    <img id="map" src="ArcadiaMap.png" alt="ArcadiaMap" />
-
-    <!-- All hotspots preserved -->
-    <div class="hotspot jungle-stage" role="button" tabindex="0" aria-label="Jungle Stage">
-      <div class="tooltip">Jungle Stage</div>
-    </div>
-    <div class="hotspot bar-1" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot snack-bar" role="button" tabindex="0" aria-label="Snack Bar">
-      <div class="tooltip">Snack Bar</div>
-    </div>
-    <div class="hotspot chill-garden" role="button" tabindex="0" aria-label="Chill Garden">
-      <div class="tooltip">Chill Garden</div>
-    </div>
-    <div class="hotspot therapies" role="button" tabindex="0" aria-label="Therapies">
-      <div class="tooltip">Therapies</div>
-    </div>
-    <div class="hotspot art-space" role="button" tabindex="0" aria-label="Art Space">
-      <div class="tooltip">Art Space</div>
-    </div>
-    <div class="hotspot utopia-stage" role="button" tabindex="0" aria-label="Utopia Stage">
-      <div class="tooltip">Utopia Stage</div>
-    </div>
-    <div class="hotspot bar-2" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot market" role="button" tabindex="0" aria-label="Market">
-      <div class="tooltip">Market</div>
-    </div>
-    <div class="hotspot psycare" role="button" tabindex="0" aria-label="Psycare">
-      <div class="tooltip">Psycare</div>
-    </div>
-    <div class="hotspot bar-3" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot food-area" role="button" tabindex="0" aria-label="Food Area">
-      <div class="tooltip">Food Area</div>
-    </div>
-    <div class="hotspot workshops" role="button" tabindex="0" aria-label="Workshops">
-      <div class="tooltip">Workshops</div>
-    </div>
+<div class="book-container" id="book">
+  <div class="buttons">
+    <button onclick="openBook(1)">Open Page 1</button>
+    <button onclick="openBook(2)">Open Page 2</button>
   </div>
 
-  <!-- Popup / Book -->
-  <div id="popup" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
-    <div class="book">
-      <div class="left-page" id="leftPage"></div>
-      <div class="back-sheet" id="backSheet"></div>
-      <div class="front-sheet" id="frontSheet" role="button" tabindex="0" aria-label="Close book popup">
-        <div class="front-content">Cover</div>
-      </div>
-    </div>
-  </div>
+  <img src="cover.png" class="front-sheet" id="cover">
+  <img src="page.png" class="back-sheet" id="rightPage">
+  <img src="page.png" class="left-page" id="leftPage">
 
-  <script>
-    /************************************************************************
-     * Animation lock + robust sequencing
-     *
-     * - Disables new opens/closes while an animation is running
-     * - Uses transitionend to chain cover -> left page precisely
-     * - Preserves hotspots and keyboard interaction
-     ************************************************************************/
+  <!-- Hotspots -->
+  <div class="hotspot" style="top: 50px; left: 420px; width: 100px; height: 100px;" onclick="alert('Hotspot 1 clicked!')"></div>
+  <div class="hotspot" style="top: 200px; left: 420px; width: 150px; height: 100px;" onclick="alert('Hotspot 2 clicked!')"></div>
+</div>
 
-    // durations (ms) keep these in sync with CSS variables
-    const COVER_DURATION = 2000;
-    const LEFT_DURATION = 1000;
+<script>
+let isAnimating = false;
 
-    const popup = document.getElementById('popup');
-    const backSheet = document.getElementById('backSheet');
-    const leftPage = document.getElementById('leftPage');
-    const frontSheet = document.getElementById('frontSheet');
-    const frontContent = frontSheet.querySelector('.front-content');
+function openBook(pageNumber) {
+  if (isAnimating) return; // Prevent overlapping animations
+  isAnimating = true;
 
-    let lastFocusedHotspot = null;
-    let isAnimating = false;
+  const cover = document.getElementById('cover');
+  const leftPage = document.getElementById('leftPage');
+  const rightPage = document.getElementById('rightPage');
 
-    // helpers
-    function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
+  // Reset states
+  cover.style.transition = 'none';
+  cover.style.transform = 'rotateY(0deg)';
+  leftPage.style.transition = 'none';
+  leftPage.style.transform = 'rotateY(90deg)';
+  rightPage.style.visibility = 'visible';
+  leftPage.style.visibility = 'visible';
 
-    function positionPopup(pageX, pageY) {
-      const popupWidth = popup.offsetWidth;
-      const popupHeight = popup.offsetHeight;
-      const margin = 10;
+  // Force reflow
+  void cover.offsetWidth;
 
-      const left = clamp(pageX, margin + popupWidth / 2, window.scrollX + window.innerWidth - popupWidth / 2 - margin);
-      const top = clamp(pageY, margin + popupHeight / 2, window.scrollY + window.innerHeight - popupHeight / 2 - margin);
+  const coverDuration = 2000; // 2 seconds
+  const overlapTime = 300; // start left page this much before cover ends
 
-      popup.style.left = left + 'px';
-      popup.style.top = top + 'px';
-      popup.style.transform = 'translate(-50%, -50%)';
-    }
+  // Animate cover opening
+  cover.style.transition = `transform ${coverDuration}ms ease-in-out`;
+  cover.style.transform = 'rotateY(-180deg)';
 
-    function getHotspotContent(hotspot) {
-      const rect = hotspot.getBoundingClientRect();
-      const pageX = rect.left + rect.width / 2 + window.scrollX;
-      const pageY = rect.top + rect.height / 2 + window.scrollY;
-      const title = hotspot.querySelector('.tooltip')?.textContent || 'Info';
+  // Animate left page slightly before cover ends
+  setTimeout(() => {
+    leftPage.style.transition = 'transform 1s ease-in-out';
+    leftPage.style.transform = 'rotateY(0deg)';
+  }, coverDuration - overlapTime);
 
-      const leftContent = `<h3>${title} Left Page</h3><p>Details about the left side.</p>`;
-      const rightContent = `<h2>${title}</h2><p>Welcome to the ${title} area of the map!</p>`;
+  // Allow next animation after cover finishes
+  setTimeout(() => {
+    isAnimating = false;
+  }, coverDuration + 100);
+}
 
-      return { pageX, pageY, title, leftContent, rightContent };
-    }
+document.getElementById('book').addEventListener('click', (e) => {
+  if (e.target.tagName !== 'BUTTON' && !e.target.classList.contains('hotspot')) {
+    closeBook();
+  }
+});
 
-    // ---------- Show popup / open book ----------
-    function showPopup(pageX, pageY, frontText, leftText, backText) {
-      // Ignore if an animation is already running
-      if (isAnimating) return;
+function closeBook() {
+  if (isAnimating) return;
+  isAnimating = true;
 
-      isAnimating = true; // lock interactions until sequence finishes
+  const cover = document.getElementById('cover');
+  const leftPage = document.getElementById('leftPage');
 
-      // set content
-      frontContent.textContent = frontText || "Cover";
-      leftPage.innerHTML = leftText || "<p>This is the left page content.</p>";
-      backSheet.innerHTML = backText || "<p>This is the right page content.</p>";
+  cover.style.transition = 'transform 2s ease-in-out';
+  cover.style.transform = 'rotateY(0deg)';
 
-      positionPopup(pageX, pageY);
+  leftPage.style.transition = 'transform 1s ease-in-out';
+  leftPage.style.transform = 'rotateY(90deg)';
 
-      // show popup container and focus
-      popup.style.display = 'block';
-      popup.setAttribute('aria-hidden', 'false');
-      popup.focus();
-
-      // Ensure right page is visible immediately (under cover)
-      backSheet.style.transition = 'none';
-      backSheet.style.opacity = '1';
-      backSheet.style.visibility = 'visible';
-
-      // Prepare left page (edge-on/hidden) for its later animation
-      leftPage.style.transition = 'none';
-      leftPage.style.transform = 'rotateY(90deg)';
-      leftPage.style.opacity = '0';
-      leftPage.style.visibility = 'hidden';
-
-      // Reset cover to closed state without transition
-      frontSheet.style.transition = 'none';
-      frontSheet.style.transform = 'rotateY(0deg)';
-      frontSheet.style.pointerEvents = 'none'; // disable pointer to avoid accidental clicks during open
-
-      popup.classList.remove('open');
-
-      // Force a reflow so the browser registers the no-transition states
-      void popup.offsetWidth;
-
-      // Attach transitionend handler to detect when cover animation finishes
-      const onCoverEnd = (ev) => {
-        if (ev.target !== frontSheet || ev.propertyName !== 'transform') return;
-        frontSheet.removeEventListener('transitionend', onCoverEnd);
-
-        // Make left page visible instantly and begin its swing (no fade)
-        leftPage.style.visibility = 'visible';
-        leftPage.style.opacity = '1';
-        // set transform transition for left page then trigger rotate to 0deg
-        leftPage.style.transition = `transform ${LEFT_DURATION}ms ease, opacity 0s ease`;
-        // Force reflow before transform change
-        void leftPage.offsetWidth;
-        leftPage.style.transform = 'rotateY(0deg)';
-
-        // Wait for left page animation to finish (transitionend)
-        const onLeftEnd = (ev2) => {
-          if (ev2.target !== leftPage || ev2.propertyName !== 'transform') return;
-          leftPage.removeEventListener('transitionend', onLeftEnd);
-
-          // Animation sequence complete — unlock
-          isAnimating = false;
-          frontSheet.style.pointerEvents = 'auto'; // re-enable cover clicks
-        };
-        leftPage.addEventListener('transitionend', onLeftEnd);
-      };
-
-      frontSheet.addEventListener('transitionend', onCoverEnd);
-
-      // Start the cover flip animation (with transition)
-      requestAnimationFrame(() => {
-        frontSheet.style.transition = `transform ${COVER_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-        // rotate negative to open from right->left (cover swings "back")
-        frontSheet.style.transform = 'rotateY(-180deg)';
-        popup.classList.add('open');
-      });
-    }
-
-    // ---------- Close popup / close book ----------
-    function closePopup() {
-      // ignore close requests while animating to prevent mid-sequence interruption
-      if (isAnimating) return;
-
-      // If popup isn't visible, nothing to do
-      if (popup.style.display !== 'block') return;
-
-      isAnimating = true;
-      frontSheet.style.pointerEvents = 'none';
-
-      // Hide left and right pages immediately (so the cover closes cleanly)
-      leftPage.style.transition = 'opacity 150ms ease, transform 150ms ease';
-      leftPage.style.opacity = '0';
-      leftPage.style.visibility = 'hidden';
-      leftPage.style.transform = 'rotateY(90deg)'; // reset to edge
-
-      backSheet.style.transition = 'opacity 150ms ease';
-      backSheet.style.opacity = '0';
-      backSheet.style.visibility = 'hidden';
-
-      // Start cover close animation
-      frontSheet.style.transition = `transform ${COVER_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-      frontSheet.style.transform = 'rotateY(0deg)';
-      popup.classList.remove('open');
-
-      // detect end of cover close to hide popup and unlock
-      const onCloseEnd = (ev) => {
-        if (ev.target !== frontSheet || ev.propertyName !== 'transform') return;
-        frontSheet.removeEventListener('transitionend', onCloseEnd);
-
-        // reset left page to initial edge state (no visible)
-        leftPage.style.transition = 'none';
-        leftPage.style.transform = 'rotateY(90deg)';
-        leftPage.style.opacity = '0';
-        leftPage.style.visibility = 'hidden';
-
-        // ensure back sheet hidden
-        backSheet.style.transition = 'none';
-        backSheet.style.opacity = '0';
-        backSheet.style.visibility = 'hidden';
-
-        popup.style.display = 'none';
-        popup.setAttribute('aria-hidden', 'true');
-
-        isAnimating = false;
-
-        // return focus to last focused hotspot if any
-        if (lastFocusedHotspot) lastFocusedHotspot.focus();
-      };
-
-      frontSheet.addEventListener('transitionend', onCloseEnd);
-    }
-
-    // ---------- Event handling (hotspots, clicks, keyboard) ----------
-
-    // Delegated click handler: hotspots open popup, clicking outside popup closes it
-    document.addEventListener('click', (e) => {
-      const hotspot = e.target.closest('.hotspot');
-
-      if (hotspot) {
-        // If animating, ignore hotspot clicks
-        if (isAnimating) return;
-
-        lastFocusedHotspot = hotspot;
-        const { pageX, pageY, title, leftContent, rightContent } = getHotspotContent(hotspot);
-        showPopup(pageX, pageY, title, leftContent, rightContent);
-        return;
-      }
-
-      // Click not on a hotspot:
-      // If clicked outside the popup and popup open and not animating -> close
-      if (!e.target.closest('#popup') && popup.style.display === 'block') {
-        if (isAnimating) return; // ignore while animating
-        closePopup();
-      }
-    });
-
-    // Keyboard support
-    document.addEventListener('keydown', (e) => {
-      const activeEl = document.activeElement;
-
-      // Hotspot activation
-      if (activeEl && activeEl.classList && activeEl.classList.contains('hotspot')) {
-        if (isAnimating) return; // ignore while animating
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          lastFocusedHotspot = activeEl;
-          const { pageX, pageY, title, leftContent, rightContent } = getHotspotContent(activeEl);
-          showPopup(pageX, pageY, title, leftContent, rightContent);
-        }
-      }
-
-      // Escape to close — only when not animating
-      if (e.key === 'Escape' && popup.style.display === 'block' && !isAnimating) {
-        closePopup();
-      }
-    });
-
-    // Clicking the cover closes the popup (if not animating)
-    frontSheet.addEventListener('click', (e) => {
-      if (isAnimating) return;
-      closePopup();
-    });
-    frontSheet.addEventListener('keydown', (e) => {
-      if (isAnimating) return;
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        closePopup();
-      }
-    });
-
-    // ensure popup remains keyboard-focusable when opened
-    popup.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !isAnimating) closePopup();
-    });
-  </script>
+  setTimeout(() => {
+    isAnimating = false;
+  }, 2100);
+}
+</script>
 </body>
 </html>
