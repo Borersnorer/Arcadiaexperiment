@@ -171,7 +171,8 @@
       background: url('cover.png') no-repeat center center;
       background-size: cover;
       border-radius: 12px 0 0 12px;
-      transform-origin: left center;
+      /* Changed transform-origin to pivot at right center (center line between pages) */
+      transform-origin: 100% center;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
       cursor: pointer;
       user-select: none;
