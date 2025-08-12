@@ -136,3 +136,157 @@
       box-shadow: none;
       z-index: 5; /* move below left page when open */
     }
+
+    /* Fix mirrored content inside cover if needed */
+    .front-content {
+      transform-origin: center;
+      transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      pointer-events: none;
+      color: transparent;
+    }
+    #popup.open .front-content {
+      transform: scaleX(-1);
+    }
+  </style>
+</head>
+<body>
+  <div id="map-container" class="map-container">
+    <img id="map" src="ArcadiaMap.png" alt="ArcadiaMap" />
+    <!-- Your hotspots here -->
+  </div>
+
+  <div id="popup" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+    <div class="book">
+      <div class="left-page" id="leftPage"></div>
+      <div class="back-sheet" id="backSheet"></div>
+      <div class="front-sheet" id="frontSheet" role="button" tabindex="0" aria-label="Close book popup">
+        <div class="front-content">Cover</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const popup = document.getElementById('popup');
+    const backSheet = document.getElementById('backSheet');
+    const leftPage = document.getElementById('leftPage');
+    const frontSheet = document.getElementById('frontSheet');
+    const frontContent = frontSheet.querySelector('.front-content');
+
+    let lastFocusedHotspot = null;
+
+    // Utility to clamp a number between min and max
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    // Position popup so it doesn't go off screen
+    function positionPopup(pageX, pageY) {
+      const popupWidth = popup.offsetWidth;
+      const popupHeight = popup.offsetHeight;
+      const margin = 10;
+
+      const left = clamp(pageX, margin + popupWidth / 2, window.scrollX + window.innerWidth - popupWidth / 2 - margin);
+      const top = clamp(pageY, margin + popupHeight / 2, window.scrollY + window.innerHeight - popupHeight / 2 - margin);
+
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+      popup.style.transform = 'translate(-50%, -50%)';
+    }
+
+    // Get hotspot info & content
+    function getHotspotContent(hotspot) {
+      const rect = hotspot.getBoundingClientRect();
+      const pageX = rect.left + rect.width / 2 + window.scrollX;
+      const pageY = rect.top + rect.height / 2 + window.scrollY;
+      const title = hotspot.querySelector('.tooltip')?.textContent || 'Info';
+
+      const leftContent = `<h3>${title} Left Page</h3><p>Details about the left side.</p>`;
+      const rightContent = `<h2>${title}</h2><p>Welcome to the ${title} area of the map!</p>`;
+
+      return { pageX, pageY, title, leftContent, rightContent };
+    }
+
+    function showPopup(pageX, pageY, frontText, leftText, backText) {
+      frontContent.textContent = frontText || "Cover";
+      leftPage.innerHTML = leftText || "<p>This is the left page content.</p>";
+      backSheet.innerHTML = backText || "<p>This is the right page content.</p>";
+
+      positionPopup(pageX, pageY);
+
+      popup.style.display = 'block';
+      popup.setAttribute('aria-hidden', 'false');
+      popup.focus();
+
+      // Reset classes & styles for new open
+      popup.classList.remove('open', 'show-left');
+      frontSheet.style.pointerEvents = 'auto'; // enable clicking to close
+
+      // Animate cover flip open
+      requestAnimationFrame(() => {
+        popup.classList.add('open');
+      });
+
+      // After cover flip animation (1s), show left page
+      setTimeout(() => {
+        popup.classList.add('show-left');
+      }, 1000);
+    }
+
+    function closePopup() {
+      // Hide left page first
+      popup.classList.remove('show-left');
+
+      // Flip cover closed
+      popup.classList.remove('open');
+
+      frontSheet.style.pointerEvents = 'none'; // prevent clicks while closing
+
+      // After animation ends (1s), hide popup
+      setTimeout(() => {
+        popup.style.display = 'none';
+        popup.setAttribute('aria-hidden', 'true');
+        if (lastFocusedHotspot) lastFocusedHotspot.focus();
+      }, 1000);
+    }
+
+    // Handle clicks on hotspots
+    document.addEventListener('click', e => {
+      const hotspot = e.target.closest('.hotspot');
+      if (hotspot) {
+        lastFocusedHotspot = hotspot;
+        const { pageX, pageY, title, leftContent, rightContent } = getHotspotContent(hotspot);
+        showPopup(pageX, pageY, title, leftContent, rightContent);
+      } else if (!e.target.closest('#popup')) {
+        closePopup();
+      }
+    });
+
+    // Keyboard support for hotspots and popup
+    document.addEventListener('keydown', e => {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.classList.contains('hotspot')) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          lastFocusedHotspot = activeEl;
+          const { pageX, pageY, title, leftContent, rightContent } = getHotspotContent(activeEl);
+          showPopup(pageX, pageY, title, leftContent, rightContent);
+        }
+      }
+
+      if (e.key === 'Escape' && popup.style.display === 'block') {
+        closePopup();
+      }
+    });
+
+    // Close popup by clicking the front cover
+    frontSheet.addEventListener('click', closePopup);
+    frontSheet.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        closePopup();
+      }
+    });
+  </script>
+</body>
+</html>
