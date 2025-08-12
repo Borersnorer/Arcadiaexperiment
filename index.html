@@ -310,22 +310,22 @@
       popup.classList.remove('open');
 
       requestAnimationFrame(() => {
-        // Animate cover flip - duration now 2s
+        // Animate cover flip - duration 2s
         frontSheet.style.transition = 'transform 2s cubic-bezier(0.4, 0, 0.2, 1)';
         frontSheet.style.transform = 'rotateY(-180deg)';
         popup.classList.add('open');
 
-        // Show right page after 2s (match cover animation)
+        // Show right page immediately after 2s (animation duration)
         setTimeout(() => {
           backSheet.style.visibility = 'visible';
           backSheet.style.opacity = 1;
 
-          // Show left page 0.5s after right page
+          // Show left page 0.2s after right page
           setTimeout(() => {
             leftPage.style.visibility = 'visible';
             leftPage.style.opacity = 1;
-          }, 500);
-        }, 2000); // <-- adjusted from 1000 to 2000
+          }, 200); // 0.2 seconds
+        }, 2000); // match cover animation duration
       });
     }
 
@@ -345,7 +345,7 @@
       setTimeout(() => {
         popup.style.display = 'none';
         if (lastFocusedHotspot) lastFocusedHotspot.focus();
-      }, 2000); // <-- adjusted from 1000 to 2000
+      }, 2000);
     }
 
     document.addEventListener('click', e => {
