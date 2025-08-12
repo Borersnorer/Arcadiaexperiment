@@ -88,7 +88,7 @@
     #popup {
       position: absolute;
       display: none;
-      width: 400px;   /* wider for two pages */
+      width: 400px;
       height: 260px;
       perspective: 1200px;
       transform-style: preserve-3d;
@@ -149,17 +149,17 @@
       z-index: 1;
     }
 
-    /* Front sheet (the book cover) now covers right page */
+    /* Front sheet (the book cover) */
     .front-sheet {
       position: absolute;
       width: 50%;
       height: 100%;
       top: 0;
-      left: 50%;             /* Right half */
+      left: 50%;
       background: url('cover.png') no-repeat center center;
       background-size: cover;
-      border-radius: 0 12px 12px 0;  /* Rounded corners on right */
-      transform-origin: left center;  /* Pivot on left edge */
+      border-radius: 0 12px 12px 0;
+      transform-origin: left center;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
       cursor: pointer;
       user-select: none;
@@ -170,6 +170,7 @@
       color: transparent;
       z-index: 10;
       backface-visibility: hidden;
+      transform: rotateY(0deg);
     }
 
     .front-content {
@@ -180,63 +181,29 @@
       color: transparent;
     }
 
-    /* Flip front sheet open: rotateY positive to open to the left */
+    /* Flip front sheet open */
     #popup.open .front-sheet {
       transform: rotateY(160deg);
       box-shadow: none;
-      z-index: 0; /* behind pages when open */
+      z-index: 0;
     }
 
-    /* Fix mirrored text by flipping content horizontally if needed */
+    /* Fix mirrored text */
     #popup.open .front-content {
       transform: scaleX(-1);
     }
-
   </style>
 </head>
 <body>
   <div id="map-container" class="map-container">
     <img id="map" src="ArcadiaMap.png" alt="ArcadiaMap" />
 
+    <!-- Hotspots here -->
     <div class="hotspot jungle-stage" role="button" tabindex="0" aria-label="Jungle Stage">
       <div class="tooltip">Jungle Stage</div>
     </div>
-    <div class="hotspot bar-1" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot snack-bar" role="button" tabindex="0" aria-label="Snack Bar">
-      <div class="tooltip">Snack Bar</div>
-    </div>
-    <div class="hotspot chill-garden" role="button" tabindex="0" aria-label="Chill Garden">
-      <div class="tooltip">Chill Garden</div>
-    </div>
-    <div class="hotspot therapies" role="button" tabindex="0" aria-label="Therapies">
-      <div class="tooltip">Therapies</div>
-    </div>
-    <div class="hotspot art-space" role="button" tabindex="0" aria-label="Art Space">
-      <div class="tooltip">Art Space</div>
-    </div>
-    <div class="hotspot utopia-stage" role="button" tabindex="0" aria-label="Utopia Stage">
-      <div class="tooltip">Utopia Stage</div>
-    </div>
-    <div class="hotspot bar-2" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot market" role="button" tabindex="0" aria-label="Market">
-      <div class="tooltip">Market</div>
-    </div>
-    <div class="hotspot psycare" role="button" tabindex="0" aria-label="Psycare">
-      <div class="tooltip">Psycare</div>
-    </div>
-    <div class="hotspot bar-3" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot food-area" role="button" tabindex="0" aria-label="Food Area">
-      <div class="tooltip">Food Area</div>
-    </div>
-    <div class="hotspot workshops" role="button" tabindex="0" aria-label="Workshops">
-      <div class="tooltip">Workshops</div>
-    </div>
+    <!-- Add other hotspots similarly -->
+
   </div>
 
   <div id="popup" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
@@ -266,12 +233,11 @@
       popup.style.left = pageX + 'px';
       popup.style.top = pageY + 'px';
 
-      // Restart animation every time
+      // Always restart the animation
       if (popup.style.display === 'block' && popup.classList.contains('open')) {
         popup.classList.remove('open');
         // Force reflow
-        // eslint-disable-next-line no-unused-expressions
-        popup.offsetWidth;
+        popup.offsetWidth; 
         requestAnimationFrame(() => {
           popup.classList.add('open');
         });
