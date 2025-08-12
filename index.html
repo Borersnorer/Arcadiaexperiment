@@ -111,7 +111,7 @@
       transform-style: preserve-3d;
     }
 
-    /* Right page (back-sheet) - hidden initially */
+    /* Right page (back-sheet) */
     .back-sheet {
       position: absolute;
       top: 0;
@@ -131,10 +131,10 @@
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.5s ease;
-      z-index: 5; /* behind left page */
+      z-index: 5;
     }
 
-    /* Left page - hidden initially */
+    /* Left page */
     .left-page {
       position: absolute;
       top: 0;
@@ -154,21 +154,21 @@
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.5s ease;
-      z-index: 10; /* above right page */
+      z-index: 10;
     }
 
-    /* Front-sheet (cover) - visible and on top */
+    /* Front-sheet (cover) */
     .front-sheet {
       position: absolute;
       top: 0;
-      left: 0;
+      left: 50%; /* Position over right page */
       width: 50%;
       height: 100%;
       background: url('cover.png') no-repeat center center;
       background-size: cover;
       border-radius: 12px 0 0 12px;
-      /* Pivot at the right edge (center fold) */
-      transform-origin: 100% center;
+      /* Pivot on left edge */
+      transform-origin: left center;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
       cursor: pointer;
       user-select: none;
@@ -180,13 +180,6 @@
       backface-visibility: hidden;
       transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
       transform: rotateY(0deg);
-    }
-
-    /* Cover flipped open */
-    #popup.open .front-sheet {
-      transform: rotateY(-160deg);
-      box-shadow: none;
-      z-index: 15; /* below left page but above right page */
     }
 
     /* Front content fix */
@@ -304,35 +297,34 @@
 
       positionPopup(pageX, pageY);
 
-      // Show popup
+      // Show popup and reset states
       popup.style.display = 'block';
       popup.setAttribute('aria-hidden', 'false');
       popup.focus();
 
-      // Reset styles to initial state:
       frontSheet.style.transform = 'rotateY(0deg)';
       frontSheet.style.pointerEvents = 'auto';
+
       backSheet.style.opacity = 0;
       backSheet.style.visibility = 'hidden';
+
       leftPage.style.opacity = 0;
       leftPage.style.visibility = 'hidden';
 
-      // Remove classes if any
       popup.classList.remove('open');
 
-      // Delay to ensure styles applied
       requestAnimationFrame(() => {
-        // Start cover flip animation
+        // Animate cover flip
         frontSheet.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
         frontSheet.style.transform = 'rotateY(-160deg)';
         popup.classList.add('open');
 
-        // After cover flip ends (1s), show right page
+        // Show right page after cover flip
         setTimeout(() => {
           backSheet.style.visibility = 'visible';
           backSheet.style.opacity = 1;
 
-          // After right page appears (0.5s), show left page
+          // Show left page after right page
           setTimeout(() => {
             leftPage.style.visibility = 'visible';
             leftPage.style.opacity = 1;
@@ -342,18 +334,17 @@
     }
 
     function closePopup() {
-      // Hide pages first
       leftPage.style.opacity = 0;
       leftPage.style.visibility = 'hidden';
       backSheet.style.opacity = 0;
       backSheet.style.visibility = 'hidden';
 
-      // Flip cover closed
       frontSheet.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
       frontSheet.style.transform = 'rotateY(0deg)';
 
       popup.classList.remove('open');
       popup.setAttribute('aria-hidden', 'true');
+
       setTimeout(() => {
         popup.style.display = 'none';
         if (lastFocusedHotspot) lastFocusedHotspot.focus();
