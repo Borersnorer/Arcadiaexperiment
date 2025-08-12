@@ -128,9 +128,12 @@
       color: #333;
       overflow-y: auto;
       user-select: text;
-      opacity: 1 !important;
-      visibility: visible !important;
-      transition: none !important;
+      opacity: 0; /* start hidden for animation */
+      visibility: hidden;
+      transform-origin: right center;
+      transform-style: preserve-3d;
+      transform: rotateY(90deg); /* vertical, closed */
+      transition: transform 1s ease, opacity 0.5s ease;
       z-index: 5;
     }
 
@@ -151,9 +154,8 @@
       color: #333;
       overflow-y: auto;
       user-select: text;
-      opacity: 1 !important;
-      visibility: visible !important;
-      transition: none !important;
+      opacity: 1;
+      visibility: visible;
       z-index: 10;
     }
 
@@ -161,7 +163,7 @@
     .front-sheet {
       position: absolute;
       top: 0;
-      left: 50%; /* cover overlaps right page */
+      left: 50%;
       width: 50%;
       height: 100%;
       background: url('cover.png') no-repeat center center;
@@ -295,21 +297,22 @@
 
       positionPopup(pageX, pageY);
 
-      // Show popup and pages immediately
       popup.style.display = 'block';
       popup.setAttribute('aria-hidden', 'false');
       popup.focus();
 
-      // Make sure pages are visible instantly and not fading
+      // Right page instantly visible (already visible in CSS)
       backSheet.style.opacity = 1;
       backSheet.style.visibility = 'visible';
       backSheet.style.transition = 'none';
 
-      leftPage.style.opacity = 1;
-      leftPage.style.visibility = 'visible';
+      // Left page start position: vertical and hidden
+      leftPage.style.opacity = 0;
+      leftPage.style.visibility = 'hidden';
       leftPage.style.transition = 'none';
+      leftPage.style.transform = 'rotateY(90deg)';
 
-      // Reset cover rotation and enable pointer events
+      // Reset cover
       frontSheet.style.transition = 'none';
       frontSheet.style.transform = 'rotateY(0deg)';
       frontSheet.style.pointerEvents = 'auto';
@@ -317,10 +320,18 @@
       popup.classList.remove('open');
 
       requestAnimationFrame(() => {
-        // Trigger the cover flip animation (2s)
+        // Animate cover flip (2s)
         frontSheet.style.transition = 'transform 2s cubic-bezier(0.4, 0, 0.2, 1)';
         frontSheet.style.transform = 'rotateY(-180deg)';
         popup.classList.add('open');
+
+        // After cover animation finishes, animate left page flip
+        setTimeout(() => {
+          leftPage.style.visibility = 'visible';
+          leftPage.style.opacity = 1;
+          leftPage.style.transition = 'transform 1s ease, opacity 0.5s ease';
+          leftPage.style.transform = 'rotateY(0deg)';
+        }, 2000); // matches cover animation duration
       });
     }
 
@@ -339,7 +350,6 @@
       popup.classList.remove('open');
       popup.setAttribute('aria-hidden', 'true');
 
-      // Hide popup after close animation (2s)
       setTimeout(() => {
         popup.style.display = 'none';
         if (lastFocusedHotspot) lastFocusedHotspot.focus();
