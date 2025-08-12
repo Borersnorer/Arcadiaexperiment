@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Interactive Map with Custom Book Popup</title>
+  <title>Interactive Map with Two-Page Book Popup</title>
   <style>
     body {
       margin: 0;
@@ -42,6 +42,7 @@
       outline-offset: 2px;
     }
 
+    /* (Keep your existing hotspot positions here) */
     .jungle-stage     { left: 64.4%;  top: 62.72%; }
     .bar-1            { left: 57.3%;  top: 65.54%; }
     .snack-bar        { left: 59.2%;  top: 61.34%; }
@@ -64,13 +65,31 @@
       display: none;
     }
 
+    /* Show tooltip on hover/focus */
+    .hotspot:hover .tooltip,
+    .hotspot:focus .tooltip {
+      display: block;
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: black;
+      color: white;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 20;
+    }
+
     /* Popup styles */
 
     #popup {
       position: absolute;
       display: none;
-      width: 320px;
-      height: 220px;
+      width: 400px;   /* wider for two pages */
+      height: 260px;
       perspective: 1200px;
       transform-style: preserve-3d;
       user-select: none;
@@ -87,16 +106,21 @@
       position: relative;
       width: 100%;
       height: 100%;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      perspective: inherit;
+      transform-style: preserve-3d;
     }
 
-    /* Back sheet shows right page of open book */
-    .back-sheet {
-      position: absolute;
-      width: 100%;
+    /* Left page */
+    .left-page {
+      position: relative;
+      width: 50%;
       height: 100%;
       background: url('page.png') no-repeat center center;
       background-size: cover;
-      border-radius: 12px;
+      border-radius: 12px 0 0 12px;
       box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
       padding: 20px;
       box-sizing: border-box;
@@ -104,16 +128,37 @@
       color: #333;
       overflow-y: auto;
       user-select: text;
+      z-index: 1;
     }
 
-    /* Front sheet shows book cover image */
+    /* Right page (back-sheet) */
+    .back-sheet {
+      position: relative;
+      width: 50%;
+      height: 100%;
+      background: url('page.png') no-repeat center center;
+      background-size: cover;
+      border-radius: 0 12px 12px 0;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+      padding: 20px;
+      box-sizing: border-box;
+      font-size: 16px;
+      color: #333;
+      overflow-y: auto;
+      user-select: text;
+      z-index: 1;
+    }
+
+    /* Front sheet (the book cover) */
     .front-sheet {
       position: absolute;
-      width: 100%;
+      width: 50%;
       height: 100%;
+      top: 0;
+      left: 0;
       background: url('cover.png') no-repeat center center;
       background-size: cover;
-      border-radius: 12px;
+      border-radius: 12px 0 0 12px;
       transform-origin: left center;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
       cursor: pointer;
@@ -123,6 +168,8 @@
       align-items: center;
       justify-content: center;
       color: transparent;
+      z-index: 5;
+      backface-visibility: hidden;
     }
 
     .front-content {
@@ -137,12 +184,14 @@
     #popup.open .front-sheet {
       transform: rotateY(-160deg);
       box-shadow: none;
+      z-index: 0; /* behind pages */
     }
 
     /* Fix mirrored text by flipping content horizontally if needed */
     #popup.open .front-content {
       transform: scaleX(-1);
     }
+
   </style>
 </head>
 <body>
@@ -192,6 +241,7 @@
 
   <div id="popup" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
     <div class="book">
+      <div class="left-page" id="leftPage"></div>
       <div class="back-sheet" id="backSheet"></div>
       <div class="front-sheet" id="frontSheet" role="button" tabindex="0" aria-label="Close book popup">
         <div class="front-content">Cover</div>
@@ -202,12 +252,16 @@
   <script>
     const popup = document.getElementById('popup');
     const backSheet = document.getElementById('backSheet');
+    const leftPage = document.getElementById('leftPage');
     const frontSheet = document.getElementById('frontSheet');
     const frontContent = frontSheet.querySelector('.front-content');
 
-    function showPopup(pageX, pageY, frontText, backText) {
+    let lastFocusedHotspot = null;
+
+    function showPopup(pageX, pageY, frontText, leftText, backText) {
       frontContent.textContent = frontText || "Cover";
-      backSheet.innerHTML = backText || "<p>This is the back page content.</p>";
+      leftPage.innerHTML = leftText || "<p>This is the left page content.</p>";
+      backSheet.innerHTML = backText || "<p>This is the right page content.</p>";
 
       popup.style.left = pageX + 'px';
       popup.style.top = pageY + 'px';
@@ -215,7 +269,7 @@
       popup.setAttribute('aria-hidden', 'false');
       popup.focus();
 
-      // Reset the animation by removing and re-adding 'open' class
+      // Reset flip animation
       popup.classList.remove('open');
       requestAnimationFrame(() => {
         popup.classList.add('open');
@@ -227,36 +281,45 @@
       popup.setAttribute('aria-hidden', 'true');
       setTimeout(() => {
         popup.style.display = 'none';
-      }, 1000);
+        if (lastFocusedHotspot) lastFocusedHotspot.focus();
+      }, 1000); // match CSS transition duration
     }
 
-    // Open popup when hotspot clicked
+    // Open popup on hotspot click
     document.addEventListener('click', e => {
       const hotspot = e.target.closest('.hotspot');
       if (hotspot) {
+        lastFocusedHotspot = hotspot;
         const rect = hotspot.getBoundingClientRect();
         const pageX = rect.left + rect.width / 2 + window.scrollX;
         const pageY = rect.top + rect.height / 2 + window.scrollY;
 
         const title = hotspot.querySelector('.tooltip')?.textContent || 'Info';
 
-        showPopup(pageX, pageY, title, `<h2>${title}</h2><p>Welcome to the ${title} area of the map!</p>`);
+        // Example content for left and right pages
+        const leftContent = `<h3>${title} Left Page</h3><p>Details about the left side.</p>`;
+        const rightContent = `<h2>${title}</h2><p>Welcome to the ${title} area of the map!</p>`;
+
+        showPopup(pageX, pageY, title, leftContent, rightContent);
       } else if (!e.target.closest('#popup')) {
         closePopup();
       }
     });
 
-    // Keyboard support: open popup on Enter/Space, close on Escape
+    // Keyboard support
     document.addEventListener('keydown', e => {
       const activeEl = document.activeElement;
       if (activeEl && activeEl.classList.contains('hotspot')) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
+          lastFocusedHotspot = activeEl;
           const rect = activeEl.getBoundingClientRect();
           const pageX = rect.left + rect.width / 2 + window.scrollX;
           const pageY = rect.top + rect.height / 2 + window.scrollY;
           const title = activeEl.querySelector('.tooltip')?.textContent || 'Info';
-          showPopup(pageX, pageY, title, `<h2>${title}</h2><p>Welcome to the ${title} area of the map!</p>`);
+          const leftContent = `<h3>${title} Left Page</h3><p>Details about the left side.</p>`;
+          const rightContent = `<h2>${title}</h2><p>Welcome to the ${title} area of the map!</p>`;
+          showPopup(pageX, pageY, title, leftContent, rightContent);
         }
       }
       if (e.key === 'Escape' && popup.style.display === 'block') {
@@ -264,7 +327,7 @@
       }
     });
 
-    // Close popup clicking front sheet
+    // Close popup clicking front cover
     frontSheet.addEventListener('click', closePopup);
     frontSheet.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') {
