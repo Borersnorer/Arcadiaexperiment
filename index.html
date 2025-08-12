@@ -1,278 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Interactive Map with Two-Page Book Popup</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      text-align: center;
-    }
+<meta charset="UTF-8" />
+<title>Two-Sheet Book Popup</title>
+<style>
+  body {
+    margin: 0;
+    background: #eee;
+    font-family: Georgia, serif;
+  }
 
-    .map-container {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      overflow: hidden;
-    }
+  /* Popup container with perspective */
+  #popup {
+    position: absolute;
+    display: none;
+    width: 320px;
+    height: 220px;
+    perspective: 1200px;
+    transform-style: preserve-3d;
+    user-select: none;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+    border-radius: 12px;
+    background: transparent;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
 
-    #map {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+  /* Book container */
+  .book {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
 
-    .hotspot {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background-color: transparent;
-      border: 2px solid white;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 10;
-    }
+  /* Back sheet - static */
+  .back-sheet {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #fdf5e6;
+    border-radius: 12px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+    padding: 20px;
+    box-sizing: border-box;
+    font-size: 16px;
+    color: #333;
+    overflow-y: auto;
+  }
 
-    .hotspot:focus-visible {
-      outline: 3px solid #fff;
-      outline-offset: 2px;
-    }
+  /* Front sheet - rotates on left edge */
+  .front-sheet {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: saddlebrown;
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    line-height: 220px;
+    text-align: center;
+    border-radius: 12px;
+    transform-origin: left center;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
+    cursor: pointer;
+    user-select: none;
+    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-    .jungle-stage     { left: 64.4%;  top: 62.72%; }
-    .bar-1            { left: 57.3%;  top: 65.54%; }
-    .snack-bar        { left: 59.2%;  top: 61.34%; }
-    .chill-garden     { left: 40.5%;  top: 50.38%; }
-    .therapies        { left: 42.0%;  top: 44.29%; }
-    .art-space        { left: 39.2%;  top: 41.72%; }
-    .utopia-stage     { left: 34.3%;  top: 36.16%; }
-    .bar-2            { left: 25.4%;  top: 37.91%; }
-    .market           { left: 22.6%;  top: 35.89%; }
-    .psycare          { left: 19.3%;  top: 32.91%; }
-    .bar-3            { left: 22.6%;  top: 31.29%; }
-    .food-area        { left: 26.8%;  top: 32.37%; }
-    .workshops        { left: 80.5%;  top: 60.27%; }
-
-    .hotspot:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .tooltip {
-      display: none;
-    }
-
-    /* Popup book styles */
-
-    #popup {
-      position: absolute;
-      display: none;
-      perspective: 800px;
-      transform: translate(-50%, -50%);
-      width: 300px;
-      height: 200px;
-      z-index: 1000;
-      user-select: none;
-    }
-
-    .book {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* The cover that flips open */
-    .cover {
-      position: absolute;
-      width: 50%;
-      height: 100%;
-      background: saddlebrown;
-      color: white;
-      font-weight: bold;
-      font-size: 24px;
-      line-height: 200px;
-      text-align: center;
-      transform-origin: left;
-      transition: transform 1s ease;
-      z-index: 2;
-      cursor: pointer;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
-      border-top-left-radius: 8px;
-      border-bottom-left-radius: 8px;
-      user-select: none;
-    }
-
-    #popup.open .cover {
-      transform: rotateY(-130deg);
-      box-shadow: -4px 4px 10px rgba(0,0,0,0.5);
-    }
-
-    /* Pages container */
-    .pages {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      width: 50%;
-      height: 100%;
-      display: flex;
-      background: beige;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.15);
-      z-index: 1;
-      overflow: hidden;
-      border-top-right-radius: 8px;
-      border-bottom-right-radius: 8px;
-    }
-
-    .page {
-      width: 50%;
-      padding: 15px;
-      font-family: Georgia, serif;
-      font-size: 14px;
-      box-sizing: border-box;
-      border-left: 1px solid #ccc;
-      background: #fdf5e6;
-      overflow-y: auto;
-      user-select: text;
-    }
-
-    .page.left {
-      border-left: none;
-    }
-  </style>
+  /* When open, front sheet flips left */
+  #popup.open .front-sheet {
+    transform: rotateY(-160deg);
+    box-shadow: none;
+  }
+</style>
 </head>
 <body>
-  <div id="map-container" class="map-container">
-    <img id="map" src="ArcadiaMap.png" alt="ArcadiaMap" />
 
-    <div class="hotspot jungle-stage" role="button" tabindex="0" aria-label="Jungle Stage">
-      <div class="tooltip">Jungle Stage</div>
+<div id="popup" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+  <div class="book">
+    <div class="back-sheet" id="backSheet">
+      <!-- Back sheet content -->
     </div>
-    <div class="hotspot bar-1" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot snack-bar" role="button" tabindex="0" aria-label="Snack Bar">
-      <div class="tooltip">Snack Bar</div>
-    </div>
-    <div class="hotspot chill-garden" role="button" tabindex="0" aria-label="Chill Garden">
-      <div class="tooltip">Chill Garden</div>
-    </div>
-    <div class="hotspot therapies" role="button" tabindex="0" aria-label="Therapies">
-      <div class="tooltip">Therapies</div>
-    </div>
-    <div class="hotspot art-space" role="button" tabindex="0" aria-label="Art Space">
-      <div class="tooltip">Art Space</div>
-    </div>
-    <div class="hotspot utopia-stage" role="button" tabindex="0" aria-label="Utopia Stage">
-      <div class="tooltip">Utopia Stage</div>
-    </div>
-    <div class="hotspot bar-2" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot market" role="button" tabindex="0" aria-label="Market">
-      <div class="tooltip">Market</div>
-    </div>
-    <div class="hotspot psycare" role="button" tabindex="0" aria-label="Psycare">
-      <div class="tooltip">Psycare</div>
-    </div>
-    <div class="hotspot bar-3" role="button" tabindex="0" aria-label="Bar">
-      <div class="tooltip">Bar</div>
-    </div>
-    <div class="hotspot food-area" role="button" tabindex="0" aria-label="Food Area">
-      <div class="tooltip">Food Area</div>
-    </div>
-    <div class="hotspot workshops" role="button" tabindex="0" aria-label="Workshops">
-      <div class="tooltip">Workshops</div>
+    <div class="front-sheet" id="frontSheet" tabindex="0" aria-label="Close book popup" role="button">
+      Cover
     </div>
   </div>
+</div>
 
-  <div id="popup" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="book" tabindex="0">
-      <div class="cover" aria-label="Close book popup" role="button" tabindex="0">Cover</div>
-      <div class="pages">
-        <div class="page left" id="leftPage"></div>
-        <div class="page right" id="rightPage"></div>
-      </div>
-    </div>
-  </div>
+<script>
+  const popup = document.getElementById('popup');
+  const backSheet = document.getElementById('backSheet');
+  const frontSheet = document.getElementById('frontSheet');
 
-  <script>
-    const popup = document.getElementById('popup');
-    const leftPage = document.getElementById('leftPage');
-    const rightPage = document.getElementById('rightPage');
-    const cover = popup.querySelector('.cover');
+  function showPopup(x, y, frontText, backText) {
+    frontSheet.textContent = frontText || "Cover";
+    backSheet.innerHTML = backText || "<p>This is the back page content.</p>";
 
-    function showPopup(pageX, pageY, leftText, rightText) {
-      leftPage.innerHTML = leftText;
-      rightPage.innerHTML = rightText;
+    popup.style.left = x + 'px';
+    popup.style.top = y + 'px';
+    popup.style.display = 'block';
+    popup.setAttribute('aria-hidden', 'false');
+    popup.focus();
 
-      // Position popup near click, centered horizontally & vertically
-      popup.style.left = pageX + 'px';
-      popup.style.top = pageY + 'px';
-      popup.style.display = 'block';
-      popup.setAttribute('aria-hidden', 'false');
+    // Delay adding open class to trigger animation
+    setTimeout(() => {
+      popup.classList.add('open');
+    }, 50);
+  }
 
-      // Animate cover flipping open
-      setTimeout(() => {
-        popup.classList.add('open');
-        cover.focus();
-      }, 50);
+  function closePopup() {
+    popup.classList.remove('open');
+    popup.setAttribute('aria-hidden', 'true');
+    // Hide after animation completes
+    setTimeout(() => {
+      popup.style.display = 'none';
+    }, 1000);
+  }
+
+  // Clicking front sheet closes popup
+  frontSheet.addEventListener('click', closePopup);
+  frontSheet.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      closePopup();
     }
+  });
 
-    function closePopup() {
-      popup.classList.remove('open');
-      popup.setAttribute('aria-hidden', 'true');
-      // Hide popup after animation
-      setTimeout(() => {
-        popup.style.display = 'none';
-      }, 1000);
+  // Close popup clicking outside book
+  document.addEventListener('click', e => {
+    if (!popup.contains(e.target)) {
+      closePopup();
     }
+  });
 
-    // Handle clicking hotspots to open popup
-    document.addEventListener('click', function (e) {
-      const hotspot = e.target.closest('.hotspot');
-      if (hotspot) {
-        const rect = hotspot.getBoundingClientRect();
-        const pageX = rect.left + rect.width / 2 + window.scrollX;
-        const pageY = rect.top + rect.height / 2 + window.scrollY;
+  // Keyboard: ESC closes popup
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && popup.style.display === 'block') {
+      closePopup();
+    }
+  });
 
-        // Use the tooltip text as popup content, or customize here
-        const title = hotspot.querySelector('.tooltip')?.textContent || 'Info';
-        // Example left and right page texts (customize as needed)
-        showPopup(pageX, pageY, `<h2>${title}</h2><p>Welcome to the ${title}!</p>`, `<p>Enjoy exploring the ${title} area.</p>`);
-      } else if (!e.target.closest('#popup')) {
-        // Click outside popup closes it
-        closePopup();
-      }
-    });
+  // Example usage: you can call showPopup with coordinates and texts
+  // showPopup(400, 300, "Cover", "<h2>Back Page Title</h2><p>This is the back page content.</p>");
+</script>
 
-    // Handle keyboard accessibility: Enter/Space on hotspot opens popup
-    document.addEventListener('keydown', function (e) {
-      const activeEl = document.activeElement;
-      if (activeEl && activeEl.classList.contains('hotspot')) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          const rect = activeEl.getBoundingClientRect();
-          const pageX = rect.left + rect.width / 2 + window.scrollX;
-          const pageY = rect.top + rect.height / 2 + window.scrollY;
-          const title = activeEl.querySelector('.tooltip')?.textContent || 'Info';
-          showPopup(pageX, pageY, `<h2>${title}</h2><p>Welcome to the ${title}!</p>`, `<p>Enjoy exploring the ${title} area.</p>`);
-        }
-      }
-      if (e.key === 'Escape' && popup.style.display === 'block') {
-        closePopup();
-      }
-    });
-
-    // Clicking the cover closes popup
-    cover.addEventListener('click', closePopup);
-    cover.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        closePopup();
-      }
-    });
-  </script>
 </body>
 </html>
